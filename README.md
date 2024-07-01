@@ -82,6 +82,12 @@ Expected response:
 `...
 {"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":"3.0"},"version":"Couchbase Sync Gateway/3.0.0(541;46803d1) EE"}%`
 
+If the `curl` command fails to connect with:
+
+`curl: (56) Recv failure: Connection reset by peer`
+
+go into the Docker UI and manually start the Sync Gateway container. The command should eventally succeed.
+
 ### License
 
 ***This is not an official Couchbase product and is a work in progress!***
