@@ -34,7 +34,26 @@ if ! [ -f "$FILE" ]; then
   --bucket-ramsize $COUCHBASE_BUCKET_RAMSIZE \
   --bucket-type couchbase 
 
-  sleep 2s 
+  sleep 2s
+
+  # used to auto create the scope and collection based on environment variables
+  # https://docs.couchbase.com/server/current/cli/cbcli/couchbase-cli-collection-manage.html
+
+  /opt/couchbase/bin/couchbase-cli collection-manage -c localhost:8091 \
+  --username $COUCHBASE_ADMINISTRATOR_USERNAME \
+  --password $COUCHBASE_ADMINISTRATOR_PASSWORD \
+  --bucket $COUCHBASE_BUCKET \
+  --create-scope $COUCHBASE_SCOPE
+
+  sleep 2s
+
+  /opt/couchbase/bin/couchbase-cli collection-manage -c localhost:8091 \
+  --username $COUCHBASE_ADMINISTRATOR_USERNAME \
+  --password $COUCHBASE_ADMINISTRATOR_PASSWORD \
+  --bucket $COUCHBASE_BUCKET \
+  --create-collection $COUCHBASE_SCOPE.$COUCHBASE_COLLECTION
+
+  sleep 2s
 
   # used to auto create the sync gateway user based on environment variables  
   # https://docs.couchbase.com/server/current/cli/cbcli/couchbase-cli-user-manage.html#examples
@@ -49,39 +68,11 @@ if ! [ -f "$FILE" ]; then
   --roles mobile_sync_gateway[*] \
   --auth-domain local
 
-  sleep 2s 
-
-  # create indexes using the QUERY REST API  
-  /opt/couchbase/bin/curl -v http://localhost:8093/query/service \
-  -u $COUCHBASE_ADMINISTRATOR_USERNAME:$COUCHBASE_ADMINISTRATOR_PASSWORD \
-  -d 'statement=CREATE INDEX idx_projects_team on projects(team)'
-      
   sleep 2s
 
-  /opt/couchbase/bin/curl -v http://localhost:8093/query/service \
-  -u $COUCHBASE_ADMINISTRATOR_USERNAME:$COUCHBASE_ADMINISTRATOR_PASSWORD \
-  -d 'statement=CREATE INDEX idx_projects_type on projects(type)'
-      
-  sleep 2s
-
-  /opt/couchbase/bin/curl -v http://localhost:8093/query/service \
-  -u $COUCHBASE_ADMINISTRATOR_USERNAME:$COUCHBASE_ADMINISTRATOR_PASSWORD \
-  -d 'statement=CREATE INDEX idx_projects_projectId on projects(projectId)'
-
-  sleep 2s
-
-  # import sample data into the bucket
-  # https://docs.couchbase.com/server/current/tools/cbimport-json.html
-
-  /opt/couchbase/bin/cbimport json --format list \
-  -c http://localhost:8091 \
-  -u $COUCHBASE_ADMINISTRATOR_USERNAME \
-  -p $COUCHBASE_ADMINISTRATOR_PASSWORD \
-  -d "file:///opt/couchbase/init/sample-data.json" -b 'projects' -g %projectId%
-
-  # create file so we know that the cluster is setup and don't run the setup again 
+  # create file so we know that the cluster is setup and don't run the setup again
   touch $FILE
-fi 
+fi
   # docker compose will stop the container from running unless we do this
   # known issue and workaround
   tail -f /dev/null

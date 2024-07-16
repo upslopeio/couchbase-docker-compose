@@ -82,11 +82,42 @@ Expected response:
 `...
 {"couchdb":"Welcome","vendor":{"name":"Couchbase Sync Gateway","version":"3.0"},"version":"Couchbase Sync Gateway/3.0.0(541;46803d1) EE"}%`
 
-If the `curl` command fails to connect with:
 
-`curl: (56) Recv failure: Connection reset by peer`
+### How to modify Sync Gateway to add databases for mulitple apps
 
-go into the Docker UI and manually start the Sync Gateway container. The command should eventally succeed.
+1. Create a new bucket, scope and collection in the [admin console](http://localhost:8091/) of the Couchbase server to house the data.
+
+1. Add a new database to `snyc-gateway.json`:
+
+```
+    "product-reviews": {
+        "server": "couchbase://couchbase-server",
+        "bucket": "product-reviews",
+        "username": "admin",
+        "password": "P@$$w0rd",
+        "num_index_replicas": 0,
+        "scopes": {
+            "reviews": {
+                "collections": {
+                    "reviews": {
+                        "sync": "function (doc, oldDoc) { if (doc.type == 'review') { channel(doc.channels); } }"
+                    }
+                }
+            }
+        },
+        "users": {
+            "GUEST": {
+                "disabled": true
+                },
+            "product-review-user": {
+                "password": "product-review-password",
+                "admin_channels": ["*"]
+            }
+        }
+	}
+```
+
+1. Rebuild and re-deploy the containers using `docker-compose up --build -d`.
 
 ### License
 
